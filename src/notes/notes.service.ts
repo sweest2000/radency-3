@@ -1,7 +1,7 @@
 import {
   BadRequestException,
   Injectable,
-  NotFoundException,
+  NotFoundException
 } from '@nestjs/common';
 import { validate } from 'class-validator';
 import * as crypto from 'crypto';
@@ -21,7 +21,7 @@ export class NotesService {
         created: 'April 20, 2021',
         category: 'Task',
         content: 'Tomatoes, bread',
-        dates: '-',
+        dates: '-'
       },
       {
         id: crypto.randomUUID(),
@@ -31,7 +31,7 @@ export class NotesService {
         category: 'Random Thought',
         content:
           'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce ultricies.',
-        dates: '-',
+        dates: '-'
       },
       {
         id: crypto.randomUUID(),
@@ -40,7 +40,7 @@ export class NotesService {
         created: 'May 05, 2021',
         category: 'Idea',
         content: 'Implement new things on 3/5/2021 and 5/5/2021',
-        dates: '3/5/2021, 5/5/2021',
+        dates: '3/5/2021, 5/5/2021'
       },
       {
         id: crypto.randomUUID(),
@@ -49,7 +49,7 @@ export class NotesService {
         created: 'May 15, 2021',
         category: 'Task',
         content: 'The Lean Startup',
-        dates: '-',
+        dates: '-'
       },
       {
         id: crypto.randomUUID(),
@@ -59,7 +59,7 @@ export class NotesService {
         category: 'Random Thought',
         content:
           'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce ultricies.',
-        dates: '-',
+        dates: '-'
       },
       {
         id: crypto.randomUUID(),
@@ -69,7 +69,7 @@ export class NotesService {
         category: 'Idea',
         content:
           'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce ultricies.',
-        dates: '-',
+        dates: '-'
       },
       {
         id: crypto.randomUUID(),
@@ -79,28 +79,28 @@ export class NotesService {
         category: 'Random Thought',
         content:
           'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce ultricies.',
-        dates: '-',
-      },
+        dates: '-'
+      }
     ];
     this.stats = [
       {
         icon: 'src/assets/cart-fill.svg',
         name: 'Task',
         active: '2',
-        archived: '0',
+        archived: '0'
       },
       {
         icon: 'src/assets/lightbulb-fill.svg',
         name: 'Idea',
         active: '2',
-        archived: '0',
+        archived: '0'
       },
       {
         icon: 'src/assets/brain-fill.svg',
         name: 'Random Thought',
         active: '3',
-        archived: '0',
-      },
+        archived: '0'
+      }
     ];
   }
 
@@ -132,7 +132,7 @@ export class NotesService {
   async addNote(dto: NotesDto) {
     const newNote: NotesDto = {
       id: crypto.randomUUID(),
-      ...dto,
+      ...dto
     };
 
     const errors = await validate(newNote);
@@ -152,12 +152,12 @@ export class NotesService {
 
     const allowedFields = Object.keys(note);
     const invalidFields = Object.keys(dto).filter(
-      (field) => !allowedFields.includes(field),
+      (field) => !allowedFields.includes(field)
     );
 
     if (invalidFields.length > 0) {
       throw new BadRequestException(
-        `Invalid fields: ${invalidFields.join(', ')}`,
+        `Invalid fields: ${invalidFields.join(', ')}`
       );
     }
 
