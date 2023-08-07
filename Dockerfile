@@ -1,5 +1,5 @@
 # Use the official Node.js image as the base image
-FROM node:15
+FROM node:20-alpine3.17
 
 # Set the working directory inside the container
 WORKDIR /app
@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install --production
+RUN npm install
 
 # Copy the rest of the application code
 COPY . .
@@ -17,7 +17,7 @@ COPY . .
 EXPOSE 4000
 
 # Set any required environment variables
-ENV NODE_ENV=production
+ENV NODE_ENV=development
 
 # Start your NestJS application
-CMD ["npm", "run", "start:prod"]
+CMD ["npm", "run", "start:dev"]

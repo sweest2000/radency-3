@@ -6,6 +6,7 @@ import {
 import { validate } from 'class-validator';
 import * as crypto from 'crypto';
 import { NotesDto } from './notes.dto';
+import { Client } from 'pg';
 
 @Injectable()
 export class NotesService {
@@ -105,7 +106,25 @@ export class NotesService {
   }
 
   async getAll() {
-    return this.notes;
+    // return this.notes;
+    const connectionString = 'postgres://admin:admin@postgres:5432/notes_db';
+    const client = new Client({ connectionString });
+    try {
+      await client.connect();
+      const result = await client.query(`SELECT notes FROM public.notes`);
+
+      if (result.rowCount === 0) {
+        return 'No data found in the notes table.';
+      } else {
+        const notes = result.rows.map((item) => item);
+        return notes;
+      }
+    } catch (err) {
+      console.error('Error querying the database:', err);
+      throw err;
+    } finally {
+      await client.end();
+    }
   }
 
   async getNote(id: string) {
