@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database Service
+  postgres:
+    image: postgres:15.3
+    container_name: postgres_db
+    restart: always
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_DB=notes_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - nestjs_network
+
+  # NestJS App Service
+  nestjs-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nestjs_app
+    restart: always
+    depends_on:
+      - postgres
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgres://admin:admin@postgres:5432/notes_db
+    ports:
+      - '4000:4000'
+    networks:
+      - nestjs_network
+
+networks:
+  nestjs_network:
+
+volumes:
+  postgres_data:
