@@ -1,11 +1,12 @@
 import {
   BadRequestException,
   Injectable,
-  NotFoundException,
+  NotFoundException
 } from '@nestjs/common';
 import { validate } from 'class-validator';
 import * as crypto from 'crypto';
 import { NotesDto } from './notes.dto';
+import { Client } from 'pg';
 
 @Injectable()
 export class NotesService {
@@ -21,7 +22,7 @@ export class NotesService {
         created: 'April 20, 2021',
         category: 'Task',
         content: 'Tomatoes, bread',
-        dates: '-',
+        dates: '-'
       },
       {
         id: crypto.randomUUID(),
@@ -31,7 +32,7 @@ export class NotesService {
         category: 'Random Thought',
         content:
           'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce ultricies.',
-        dates: '-',
+        dates: '-'
       },
       {
         id: crypto.randomUUID(),
@@ -40,7 +41,7 @@ export class NotesService {
         created: 'May 05, 2021',
         category: 'Idea',
         content: 'Implement new things on 3/5/2021 and 5/5/2021',
-        dates: '3/5/2021, 5/5/2021',
+        dates: '3/5/2021, 5/5/2021'
       },
       {
         id: crypto.randomUUID(),
@@ -49,7 +50,7 @@ export class NotesService {
         created: 'May 15, 2021',
         category: 'Task',
         content: 'The Lean Startup',
-        dates: '-',
+        dates: '-'
       },
       {
         id: crypto.randomUUID(),
@@ -59,7 +60,7 @@ export class NotesService {
         category: 'Random Thought',
         content:
           'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce ultricies.',
-        dates: '-',
+        dates: '-'
       },
       {
         id: crypto.randomUUID(),
@@ -69,7 +70,7 @@ export class NotesService {
         category: 'Idea',
         content:
           'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce ultricies.',
-        dates: '-',
+        dates: '-'
       },
       {
         id: crypto.randomUUID(),
@@ -79,33 +80,51 @@ export class NotesService {
         category: 'Random Thought',
         content:
           'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce ultricies.',
-        dates: '-',
-      },
+        dates: '-'
+      }
     ];
     this.stats = [
       {
         icon: 'src/assets/cart-fill.svg',
         name: 'Task',
         active: '2',
-        archived: '0',
+        archived: '0'
       },
       {
         icon: 'src/assets/lightbulb-fill.svg',
         name: 'Idea',
         active: '2',
-        archived: '0',
+        archived: '0'
       },
       {
         icon: 'src/assets/brain-fill.svg',
         name: 'Random Thought',
         active: '3',
-        archived: '0',
-      },
+        archived: '0'
+      }
     ];
   }
 
   async getAll() {
-    return this.notes;
+    // return this.notes;
+    const connectionString = 'postgres://admin:admin@postgres:5432/notes_db';
+    const client = new Client({ connectionString });
+    try {
+      await client.connect();
+      const result = await client.query(`SELECT notes FROM public.notes`);
+
+      if (result.rowCount === 0) {
+        return 'No data found in the notes table.';
+      } else {
+        const notes = result.rows.map((item) => item);
+        return notes;
+      }
+    } catch (err) {
+      console.error('Error querying the database:', err);
+      throw err;
+    } finally {
+      await client.end();
+    }
   }
 
   async getNote(id: string) {
@@ -132,7 +151,7 @@ export class NotesService {
   async addNote(dto: NotesDto) {
     const newNote: NotesDto = {
       id: crypto.randomUUID(),
-      ...dto,
+      ...dto
     };
 
     const errors = await validate(newNote);
@@ -148,6 +167,17 @@ export class NotesService {
     const note = this.notes.find((item) => item.id === id);
     if (!note) {
       throw new NotFoundException(`Note with ID ${id} not found.`);
+    }
+
+    const allowedFields = Object.keys(note);
+    const invalidFields = Object.keys(dto).filter(
+      (field) => !allowedFields.includes(field)
+    );
+
+    if (invalidFields.length > 0) {
+      throw new BadRequestException(
+        `Invalid fields: ${invalidFields.join(', ')}`
+      );
     }
 
     Object.assign(note, dto);
