@@ -150,6 +150,17 @@ export class NotesService {
       throw new NotFoundException(`Note with ID ${id} not found.`);
     }
 
+    const allowedFields = Object.keys(note);
+    const invalidFields = Object.keys(dto).filter(
+      (field) => !allowedFields.includes(field),
+    );
+
+    if (invalidFields.length > 0) {
+      throw new BadRequestException(
+        `Invalid fields: ${invalidFields.join(', ')}`,
+      );
+    }
+
     Object.assign(note, dto);
 
     const errors = await validate(note);
