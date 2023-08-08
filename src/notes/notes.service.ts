@@ -1,162 +1,113 @@
 import {
   BadRequestException,
   Injectable,
-  NotFoundException,
+  NotFoundException
 } from '@nestjs/common';
-import { validate } from 'class-validator';
 import * as crypto from 'crypto';
-import { NotesDto } from './notes.dto';
+
+import { InjectModel } from '@nestjs/sequelize';
+import { Notes } from './notes.dto';
+import { Stats } from './stats/stats.dto';
 
 @Injectable()
 export class NotesService {
-  notes: NotesDto[];
-  stats: any[];
+  constructor(
+    @InjectModel(Notes)
+    private noteModel: typeof Notes,
 
-  constructor() {
-    this.notes = [
-      {
-        id: crypto.randomUUID(),
-        icon: 'src/assets/cart-fill.svg',
-        name: 'Shopping list',
-        created: 'April 20, 2021',
-        category: 'Task',
-        content: 'Tomatoes, bread',
-        dates: '-',
-      },
-      {
-        id: crypto.randomUUID(),
-        icon: 'src/assets/brain-fill.svg',
-        name: 'The theory of evolution',
-        created: 'April 27, 2021',
-        category: 'Random Thought',
-        content:
-          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce ultricies.',
-        dates: '-',
-      },
-      {
-        id: crypto.randomUUID(),
-        icon: 'src/assets/lightbulb-fill.svg',
-        name: 'New Feature',
-        created: 'May 05, 2021',
-        category: 'Idea',
-        content: 'Implement new things on 3/5/2021 and 5/5/2021',
-        dates: '3/5/2021, 5/5/2021',
-      },
-      {
-        id: crypto.randomUUID(),
-        icon: 'src/assets/cart-fill.svg',
-        name: 'Books',
-        created: 'May 15, 2021',
-        category: 'Task',
-        content: 'The Lean Startup',
-        dates: '-',
-      },
-      {
-        id: crypto.randomUUID(),
-        icon: 'src/assets/brain-fill.svg',
-        name: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce ultricies.',
-        created: 'April 27, 2021',
-        category: 'Random Thought',
-        content:
-          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce ultricies.',
-        dates: '-',
-      },
-      {
-        id: crypto.randomUUID(),
-        icon: 'src/assets/lightbulb-fill.svg',
-        name: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce ultricies.',
-        created: 'April 27, 2021',
-        category: 'Idea',
-        content:
-          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce ultricies.',
-        dates: '-',
-      },
-      {
-        id: crypto.randomUUID(),
-        icon: 'src/assets/brain-fill.svg',
-        name: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce ultricies.',
-        created: 'April 27, 2021',
-        category: 'Random Thought',
-        content:
-          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce ultricies.',
-        dates: '-',
-      },
-    ];
-    this.stats = [
-      {
-        icon: 'src/assets/cart-fill.svg',
-        name: 'Task',
-        active: '2',
-        archived: '0',
-      },
-      {
-        icon: 'src/assets/lightbulb-fill.svg',
-        name: 'Idea',
-        active: '2',
-        archived: '0',
-      },
-      {
-        icon: 'src/assets/brain-fill.svg',
-        name: 'Random Thought',
-        active: '3',
-        archived: '0',
-      },
-    ];
+    @InjectModel(Stats)
+    private statsModel: typeof Stats
+  ) {}
+
+  async getAll(): Promise<Notes[]> {
+    const notes = await this.noteModel.findAll();
+    return notes.map((note) => ({
+      id: note.id,
+      icon: note.icon,
+      name: note.name,
+      created: note.created,
+      category: note.category,
+      content: note.content,
+      dates: note.dates
+    })) as Notes[];
   }
 
-  async getAll() {
-    return this.notes;
+  async getStats(): Promise<Stats[]> {
+    const stats = await this.statsModel.findAll();
+    return stats.map((stat) => ({
+      icon: stat.icon,
+      name: stat.name,
+      active: stat.active,
+      archived: stat.archived
+    })) as Stats[];
   }
 
-  async getNote(id: string) {
-    const note = this.notes.find((item) => item.id === id);
+  async getNote(id: string): Promise<Notes> {
+    const note = await this.noteModel.findByPk(id);
     if (!note) {
-      throw new NotFoundException('Note not found');
+      throw new NotFoundException(`Note with ID ${id} not found.`);
     }
     return note;
   }
 
-  async getStats() {
-    return this.stats;
-  }
+  async deleteNote(id: string): Promise<Notes> {
+    const deletedNote = await this.noteModel.findByPk(id);
 
-  async deleteNote(id: string) {
-    const index = this.notes.findIndex((note) => note.id === id);
-    if (index === -1) {
-      throw new NotFoundException('Note not found');
+    if (!deletedNote) {
+      throw new NotFoundException(`Note with ID ${id} not found.`);
     }
-    this.notes.splice(index, 1);
-    return { message: 'Note deleted' };
+    await this.noteModel.destroy({
+      where: { id }
+    });
+    return deletedNote;
   }
 
-  async addNote(dto: NotesDto) {
-    const newNote: NotesDto = {
-      id: crypto.randomUUID(),
-      ...dto,
-    };
+  async addNote(noteData: Partial<Notes>): Promise<Notes> {
+    try {
+      const columns = await this.noteModel.describe();
+      const allowedFields = Object.keys(columns);
 
-    const errors = await validate(newNote);
-    if (errors.length > 0) {
-      throw new BadRequestException(errors);
+      const unknownColumns = Object.keys(noteData).filter(
+        (key) => !allowedFields.includes(key)
+      );
+
+      if (unknownColumns.length > 0) {
+        throw new BadRequestException(
+          `Unknown columns: ${unknownColumns.join(', ')}`
+        );
+      }
+
+      const newNote = await this.noteModel.create({
+        id: crypto.randomUUID(),
+        ...noteData
+      });
+      return newNote;
+    } catch (e) {
+      throw new BadRequestException('Null value in request');
     }
-
-    this.notes.push(newNote);
-    return newNote;
   }
 
-  async changeNote(id: string, dto: NotesDto) {
-    const note = this.notes.find((item) => item.id === id);
+  async changeNote(id: string, noteData: Partial<Notes>): Promise<Notes> {
+    const note = await this.noteModel.findByPk(id);
     if (!note) {
       throw new NotFoundException(`Note with ID ${id} not found.`);
     }
 
-    Object.assign(note, dto);
+    const columns = await this.noteModel.describe();
+    const allowedFields = Object.keys(columns);
 
-    const errors = await validate(note);
-    if (errors.length > 0) {
-      throw new BadRequestException(errors);
+    const unknownColumns = Object.keys(noteData).filter(
+      (key) => !allowedFields.includes(key)
+    );
+
+    if (unknownColumns.length > 0) {
+      throw new BadRequestException(
+        `Unknown columns: ${unknownColumns.join(', ')}`
+      );
     }
 
-    return note;
+    const updatedNote = await note.update(noteData);
+
+    return updatedNote;
   }
 }

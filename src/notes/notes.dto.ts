@@ -1,30 +1,27 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { Model, Column, Table } from 'sequelize-typescript';
 
-export class NotesDto {
-  @IsOptional()
-  id?: string;
+@Table({ tableName: 'notes', timestamps: false })
+export class Notes extends Model {
+  @Column({
+    primaryKey: true
+  })
+  id: string;
 
-  @IsNotEmpty()
-  @IsString()
+  @Column
   icon: string;
 
-  @IsNotEmpty()
-  @IsString()
+  @Column
   name: string;
 
-  @IsNotEmpty()
-  @IsString()
+  @Column
   created: string;
 
-  @IsNotEmpty()
-  @IsString()
+  @Column
   category: string;
 
-  @IsNotEmpty()
-  @IsString()
+  @Column
   content: string;
 
-  @IsNotEmpty()
-  @IsString({ each: true })
+  @Column
   dates: string;
 }
